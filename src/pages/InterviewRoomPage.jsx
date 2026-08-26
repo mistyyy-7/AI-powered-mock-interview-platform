@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
+import CanvasBackground from '../components/ui/CanvasBackground';
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -16,7 +17,9 @@ import {
   ArrowRight, 
   HelpCircle, 
   CheckCircle2, 
-  FileText
+  FileText,
+  Pause,
+  Play
 } from 'lucide-react';
 import { getMockQuestions } from '../data/mockQuestions';
 import { calculateInterviewScore } from '../utils/scoreCalculator';
@@ -27,7 +30,6 @@ const InterviewRoomPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // Load session config from location state or fallback to localStorage
   const sessionConfig = location.state || JSON.parse(localStorage.getItem('current_mock_session') || '{}') || {};
 
   const role = sessionConfig.role || 'Frontend Engineer';
@@ -35,18 +37,16 @@ const InterviewRoomPage = () => {
   const difficulty = sessionConfig.difficulty || 'Senior';
   const questionCount = sessionConfig.questionCount || 3;
 
-  // Questions state
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answersMap, setAnswersMap] = useState({});
   const [currentAnswer, setCurrentAnswer] = useState('');
   
-  // Interactive UI state
   const [micActive, setMicActive] = useState(true);
   const [videoActive, setVideoActive] = useState(true);
   const [showHint, setShowHint] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
-  // Initialize questions on mount
   useEffect(() => {
     const fetched = getMockQuestions({ role, type, difficulty, limit: questionCount });
     setQuestions(fetched);
@@ -54,12 +54,11 @@ const InterviewRoomPage = () => {
 
   const currentQuestion = questions[currentIndex] || {
     id: 'demo-1',
-    questionText: 'Loading interview question...',
+    questionText: 'Tell me about yourself and your technical background.',
     hints: '',
     difficulty: difficulty
   };
 
-  // Handle saving answer and navigating forward
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
 
@@ -75,17 +74,14 @@ const InterviewRoomPage = () => {
       setCurrentAnswer(updatedAnswers[nextQ?.id] || '');
       setShowHint(false);
     } else {
-      // Finished all questions! Calculate evaluation result
       const evaluationResult = calculateInterviewScore(questions, updatedAnswers);
       
-      // Save result locally for offline persistence
       localStorage.setItem('last_interview_result', JSON.stringify({
         sessionConfig,
         evaluationResult,
         completedAt: new Date().toISOString()
       }));
 
-      // Asynchronously post to backend Express API if authenticated
       try {
         await api.createInterview({
           role,
@@ -104,10 +100,9 @@ const InterviewRoomPage = () => {
           overallScore: evaluationResult.overallScore
         });
       } catch (err) {
-        console.log('[InterviewRoom] API save handled with local fallback');
+        console.log('[InterviewRoom] Local fallback saved');
       }
 
-      // Navigate to Result Page
       navigate('/result', { state: { evaluationResult, sessionConfig } });
     }
   };
@@ -115,34 +110,35 @@ const InterviewRoomPage = () => {
   const isLastQuestion = currentIndex === questions.length - 1;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between relative overflow-x-hidden">
+      <CanvasBackground />
       <Navbar />
 
-      <main className="pt-24 pb-12 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col justify-between space-y-6">
+      <main className="pt-24 pb-12 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col justify-between space-y-6 relative z-10">
         
         {/* Top Header Controls Bar */}
-        <div className="bg-slate-900/80 backdrop-blur-md border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+        <div className="bg-slate-950/80 backdrop-blur-2xl border border-indigo-500/20 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xl">
           <div className="flex items-center gap-3">
             <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
             <div>
               <div className="font-bold text-white text-sm">
-                {role} • {difficulty} Level
+                AI Mock Interview • {role}
               </div>
               <div className="text-xs text-slate-400">
-                Focus: {type} Interview Track
+                {difficulty} Level • {type} Focus Track
               </div>
             </div>
           </div>
 
-          {/* Progress Bar & Indicators */}
+          {/* Progress Bar */}
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-indigo-300">
+              <span className="text-xs font-semibold text-purple-300">
                 Question {currentIndex + 1} of {questions.length || 1}
               </span>
               <div className="w-24 sm:w-32 h-2 bg-slate-800 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-cyan-400 rounded-full transition-all duration-300"
                   style={{ width: `${((currentIndex + 1) / (questions.length || 1)) * 100}%` }}
                 />
               </div>
@@ -154,56 +150,56 @@ const InterviewRoomPage = () => {
               icon={PhoneOff}
               onClick={() => navigate('/dashboard')}
             >
-              End
+              End Interview
             </Button>
           </div>
         </div>
 
-        {/* Video & Question Interactive Grid */}
+        {/* Center Grid: AI Orb Visual & Question/Answer Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
           
-          {/* Left Column: AI Video & Voice Feed (5 Cols) */}
+          {/* Left: Animated AI Orb & Camera Feed Tile (5 Cols) */}
           <div className="lg:col-span-5 space-y-4 flex flex-col justify-between">
             
             {/* AI Avatar Box */}
-            <div className="relative aspect-video rounded-3xl bg-slate-900 border border-slate-800 overflow-hidden flex flex-col justify-between p-5 shadow-2xl">
+            <div className="relative aspect-video rounded-3xl bg-slate-900/90 border border-purple-500/30 overflow-hidden flex flex-col justify-between p-5 shadow-2xl">
               <div className="flex items-center justify-between z-10">
                 <Badge variant="purple" dot={true}>AI INTERVIEWER</Badge>
-                <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
+                <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium bg-slate-950/80 px-2.5 py-1 rounded-md border border-slate-800">
                   <Volume2 className="w-3.5 h-3.5" />
-                  <span>Speaking...</span>
+                  <span>{isPaused ? 'Paused' : 'Active Audio'}</span>
                 </div>
               </div>
 
-              {/* Avatar Center Visual */}
+              {/* Center Animated AI Orb */}
               <div className="my-auto flex flex-col items-center justify-center space-y-3 relative z-10">
                 <div className="relative">
-                  <div className="absolute -inset-3 bg-indigo-500/20 rounded-full blur-xl animate-pulse" />
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 p-1 shadow-2xl">
+                  <div className="absolute -inset-4 bg-purple-500/25 rounded-full blur-xl animate-pulse" />
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-400 p-1 shadow-2xl animate-pulse-slow">
                     <div className="w-full h-full bg-slate-950 rounded-full flex items-center justify-center">
-                      <Bot className="w-10 h-10 text-indigo-400" />
+                      <Bot className="w-12 h-12 text-purple-300" />
                     </div>
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-white">Sarah (Staff AI Coach)</div>
-                  <div className="text-[11px] text-indigo-300 font-mono">Asking Question #{currentIndex + 1}</div>
+                  <div className="text-sm font-bold text-white">Sarah (AI Recruiter)</div>
+                  <div className="text-[11px] text-purple-300 font-mono">Asking Question #{currentIndex + 1}</div>
                 </div>
               </div>
 
-              {/* Audio Spectrum Bar */}
+              {/* Waveform Spectrum Bar */}
               <div className="bg-slate-950/80 backdrop-blur-md p-3 rounded-xl border border-slate-800 flex items-center justify-between z-10">
-                <span className="text-xs text-slate-300 font-medium">AI Audio Stream</span>
+                <span className="text-xs text-slate-300 font-medium">Neural Voice Stream</span>
                 <div className="flex items-center gap-1 h-5">
                   <span className="w-1 bg-indigo-400 rounded-full audio-bar-1" />
-                  <span className="w-1 bg-cyan-400 rounded-full audio-bar-2" />
-                  <span className="w-1 bg-purple-400 rounded-full audio-bar-3" />
+                  <span className="w-1 bg-purple-400 rounded-full audio-bar-2" />
+                  <span className="w-1 bg-cyan-400 rounded-full audio-bar-3" />
                   <span className="w-1 bg-emerald-400 rounded-full audio-bar-4" />
                 </div>
               </div>
             </div>
 
-            {/* Candidate Webcam & Mic Control Tile */}
+            {/* Candidate Mic/Camera Toggle */}
             <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -235,11 +231,11 @@ const InterviewRoomPage = () => {
               </div>
 
               {videoActive ? (
-                <div className="aspect-video rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-center text-xs text-slate-500">
-                  <span>Simulated HD Camera Feed Active</span>
+                <div className="aspect-video rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-xs text-slate-500">
+                  <span>HD Candidate Camera Feed Active</span>
                 </div>
               ) : (
-                <div className="aspect-video rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-center text-xs text-slate-500">
+                <div className="aspect-video rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-xs text-slate-500">
                   <span>Camera Disabled</span>
                 </div>
               )}
@@ -247,21 +243,21 @@ const InterviewRoomPage = () => {
 
           </div>
 
-          {/* Right Column: Question Prompt & Answer Input (7 Cols) */}
+          {/* Right: Question Card & Answer Input (7 Cols) */}
           <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
             
-            <GlassCard className="p-6 flex-1 flex flex-col justify-between space-y-6">
+            <GlassCard className="p-6 flex-1 flex flex-col justify-between space-y-6 border-purple-500/20">
               
-              {/* Question Text Prompt */}
+              {/* Question Card */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Badge variant="indigo">
+                  <Badge variant="purple">
                     QUESTION {currentIndex + 1} OF {questions.length}
                   </Badge>
                   <button
                     type="button"
                     onClick={() => setShowHint(!showHint)}
-                    className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+                    className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1"
                   >
                     <HelpCircle className="w-4 h-4" />
                     <span>{showHint ? 'Hide Hint' : 'Show AI Hint'}</span>
@@ -272,12 +268,11 @@ const InterviewRoomPage = () => {
                   {currentQuestion.questionText}
                 </h2>
 
-                {/* Optional AI Hint Box */}
                 {showHint && currentQuestion.hints && (
-                  <div className="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs text-indigo-200 space-y-1 animate-in fade-in duration-200">
-                    <div className="font-bold text-indigo-300 flex items-center gap-1.5">
+                  <div className="p-4 rounded-xl bg-purple-950/40 border border-purple-500/30 text-xs text-purple-200 space-y-1 animate-in fade-in duration-200">
+                    <div className="font-bold text-purple-300 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Suggested Areas to Cover:</span>
+                      <span>Suggested Key Points:</span>
                     </div>
                     <p className="leading-relaxed text-slate-300">{currentQuestion.hints}</p>
                   </div>
@@ -288,7 +283,7 @@ const InterviewRoomPage = () => {
               <form onSubmit={handleSubmitAnswer} className="space-y-4 pt-4 border-t border-slate-800">
                 <div className="flex justify-between items-center text-xs font-semibold text-slate-300">
                   <label htmlFor="answerInput" className="flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-indigo-400" />
+                    <FileText className="w-4 h-4 text-purple-400" />
                     <span>Your Answer (Speak or Type Below)</span>
                   </label>
                   <span className="text-slate-400 font-mono">
@@ -301,15 +296,26 @@ const InterviewRoomPage = () => {
                   rows={7}
                   value={currentAnswer}
                   onChange={(e) => setCurrentAnswer(e.target.value)}
-                  placeholder="Walk through your thought process, architectural choices, and concrete results. Use the STAR framework for behavioral questions..."
-                  className="glass-input w-full p-4 rounded-xl text-sm text-slate-100 placeholder:text-slate-500 focus:ring-2 focus:ring-indigo-500 resize-none font-sans"
+                  placeholder="Walk through your thought process, technical architecture, and concrete results using the STAR framework..."
+                  className="glass-input w-full p-4 rounded-xl text-sm text-slate-100 placeholder:text-slate-500 focus:ring-2 focus:ring-purple-500 resize-none"
                   required
                 />
 
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-xs text-slate-400">
-                    {micActive ? '🎙️ Speech recognition listening...' : 'Keyboard input active'}
-                  </span>
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      size="sm" 
+                      icon={isPaused ? Play : Pause}
+                      onClick={() => setIsPaused(!isPaused)}
+                    >
+                      {isPaused ? 'Resume' : 'Pause'}
+                    </Button>
+                    <span className="text-xs text-slate-400">
+                      {micActive ? '🎙️ Voice active' : 'Keyboard mode'}
+                    </span>
+                  </div>
 
                   <Button
                     type="submit"
@@ -317,8 +323,9 @@ const InterviewRoomPage = () => {
                     size="md"
                     icon={isLastQuestion ? CheckCircle2 : ArrowRight}
                     iconPosition="right"
+                    className="shadow-lg shadow-purple-600/30"
                   >
-                    {isLastQuestion ? 'Complete Interview & View Scorecard' : 'Submit Answer & Next Question'}
+                    {isLastQuestion ? 'Complete & View Scorecard' : 'Submit Answer & Next →'}
                   </Button>
                 </div>
               </form>

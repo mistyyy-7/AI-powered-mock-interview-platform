@@ -3,78 +3,99 @@
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: #07090e;
-    color: #f1f5f9;
+    background-color: #020617;
+    background-image: 
+      radial-gradient(circle at 75% 45%, rgba(6, 182, 212, 0.08), transparent 35%),
+      radial-gradient(circle at 25% 70%, rgba(59, 130, 246, 0.05), transparent 30%);
+    background-attachment: fixed;
+    color: #f8fafc;
+    overflow-x: hidden;
   }
 }
 
-/* Custom Glassmorphism & Micro-animations */
+/* Futuristic Cyber Glassmorphism System - Blackish Navy Theme */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(6, 11, 25, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(6, 182, 212, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 .glass-card {
-  background: rgba(30, 41, 59, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(8, 14, 30, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
-  background: rgba(30, 41, 59, 0.6);
-  border-color: rgba(99, 102, 241, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px -10px rgba(79, 70, 229, 0.15);
+  background: rgba(12, 20, 42, 0.8);
+  border-color: rgba(6, 182, 212, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px -10px rgba(6, 182, 212, 0.25), 0 0 20px -5px rgba(59, 130, 246, 0.3);
 }
 
 .glass-input {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(6, 11, 25, 0.85);
+  border: 1px solid rgba(6, 182, 212, 0.2);
   color: #f8fafc;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
 }
 
 .glass-input:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.25), 0 0 20px rgba(6, 182, 212, 0.2);
 }
 
 /* Ambient Radial Glows */
-.bg-glow-indigo {
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-}
-
 .bg-glow-cyan {
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, rgba(0, 0, 0, 0) 70%);
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
 }
 
-.bg-glow-purple {
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, rgba(0, 0, 0, 0) 70%);
+.bg-glow-blue {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+}
+
+.bg-glow-neural {
+  background: radial-gradient(ellipse at center, rgba(6, 182, 212, 0.10) 0%, rgba(59, 130, 246, 0.06) 45%, rgba(2, 6, 23, 0) 75%);
 }
 
 /* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(0.5deg); }
+}
+
+@keyframes float-reverse {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(10px) rotate(-0.5deg); }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.03); }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
 }
 
 @keyframes audioWave {
   0%, 100% { height: 6px; }
-  50% { height: 24px; }
+  50% { height: 26px; }
 }
 
 .animate-float {
-  animation: float 5s ease-in-out infinite;
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 7s ease-in-out infinite;
 }
 
 .animate-pulse-slow {
@@ -92,14 +113,23 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #020617;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #0f172a;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #1e293b;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-float-reverse,
+  .animate-pulse-slow {
+    animation: none !important;
+  }
 }

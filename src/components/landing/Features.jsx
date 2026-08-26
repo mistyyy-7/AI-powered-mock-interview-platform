@@ -1,17 +1,5 @@
 import React from 'react';
-import { 
-  Bot, 
-  BarChart3, 
-  FileText, 
-  BrainCircuit, 
-  Volume2, 
-  CheckCircle2, 
-  Zap, 
-  Layers, 
-  ShieldCheck, 
-  Award,
-  Sparkles
-} from 'lucide-react';
+import { Bot, Zap, BarChart3, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
 import GlassCard from '../ui/GlassCard';
 import Badge from '../ui/Badge';
 
@@ -19,126 +7,112 @@ const Features = () => {
   const featureList = [
     {
       icon: Bot,
+      color: 'purple',
+      badge: 'Neural Voice Engine',
+      title: 'AI-Powered Interviews',
+      description: 'Practice realistic interviews powered by AI. Experience natural, adaptive follow-up questions tailored to your exact industry role.',
+      highlights: ['Real-Time Adaptive Qs', '< 400ms Voice Latency']
+    },
+    {
+      icon: Zap,
       color: 'indigo',
-      badge: 'Real-Time Voice',
-      title: 'Human-Like AI Voice Interviewer',
-      description: 'Engage in natural, bidirectional voice conversations. The AI asks contextual follow-up questions based on your live responses, just like a hiring manager.',
-      metrics: ['< 400ms Audio Latency', 'Adaptive Difficulty']
+      badge: 'Instant Scorecard',
+      title: 'Instant Feedback',
+      description: 'Understand your strengths and weaknesses immediately. Receive instant STAR framework analysis, keyword matching, and communication rubrics.',
+      highlights: ['STAR Framework Rubric', 'Technical Keyword Check']
     },
     {
       icon: BarChart3,
-      color: 'purple',
-      badge: 'Instant Analytics',
-      title: 'STAR Method Scorecard',
-      description: 'Get an immediate breakdown on Situation, Task, Action, and Result. See exact scores for technical depth, communication clarity, and problem-solving logic.',
-      metrics: ['Detailed Rubric Breakdown', 'Actionable Highlights']
-    },
-    {
-      icon: FileText,
       color: 'cyan',
-      badge: 'Resume Tailored',
-      title: 'Dynamic Resume Question Engine',
-      description: 'Upload your resume or job description (JD). The AI extracts your key projects and technical stack to formulate laser-targeted interview questions.',
-      metrics: ['PDF / Docx Upload', 'Custom Job Alignment']
+      badge: 'Performance Tracking',
+      title: 'Performance Analytics',
+      description: 'Track your interview performance over time. View clear historical trend metrics, filler word counts, pacing, and readiness scores.',
+      highlights: ['Historical Score Trends', 'Confidence Index']
     },
     {
-      icon: Volume2,
+      icon: Sparkles,
       color: 'emerald',
-      badge: 'Speech Metrics',
-      title: 'Filler Word & Pacing Analytics',
-      description: 'Track filler words ("um", "like", "you know"), speech cadence, tone modulation, and pause duration so you speak with supreme confidence.',
-      metrics: ['Filler Count Metric', 'Optimal WPM Pacing']
-    },
-    {
-      icon: BrainCircuit,
-      color: 'amber',
-      badge: 'Answer Upgrade',
-      title: 'AI Ideal Answer Refactoring',
-      description: 'Compare your response against an idealized 10/10 answer. Learn how top 1% candidates structure complex architectural and behavioral answers.',
-      metrics: ['Before/After Comparison', 'Key Keywords Checklist']
-    },
-    {
-      icon: Layers,
-      color: 'rose',
-      badge: '500+ Question Bank',
-      title: 'System Design & Coding Practice',
-      description: 'From React hooks to microservice distributed locks, practice whiteboard explanations, system design tradeoffs, and behavioral situations.',
-      metrics: ['FAANG Benchmarks', '10+ Industry Categories']
+      badge: 'Smart Refactoring',
+      title: 'Personalized Improvement',
+      description: 'Get AI-generated recommendations based on your performance. Learn how top 1% candidates structure 10/10 responses.',
+      highlights: ['Ideal Answer Rewrites', 'Targeted Coaching Hints']
     }
   ];
 
   return (
-    <section id="features" className="py-24 relative overflow-hidden bg-slate-950/60">
+    <section id="features" className="py-24 relative z-10 overflow-hidden">
       
-      {/* Subtle Divider Line */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16 text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-semibold text-indigo-400">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>EVERYTHING YOU NEED TO ACE THE INTERVIEW</span>
+      {/* Background ambient glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        {/* Section Title */}
+        <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-indigo-500/20 text-xs font-semibold text-indigo-300">
+            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <span>FUTURISTIC AI PLATFORM CAPABILITIES</span>
+          </div>
+
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+            Everything You Need to <br />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-300 to-cyan-400">
+              Interview Better
+            </span>
+          </h2>
+
+          <p className="text-base sm:text-lg text-slate-400 leading-relaxed">
+            Eliminate interview anxiety. Train under realistic high-stakes scenarios with AI feedback calibrated to top tech company standards.
+          </p>
         </div>
 
-        <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-          Supercharge Your Preparation with <br />
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-300 to-cyan-400">
-            Intelligent AI Coaching Features
-          </span>
-        </h2>
-
-        <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto">
-          Eliminate interview anxiety. Practice under realistic pressure with real-time feedback designed by senior hiring managers.
-        </p>
-      </div>
-
-      {/* Grid of Feature Glass Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featureList.map((feat, idx) => {
+        {/* 4 Premium Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {featureList.map((feat) => {
             const Icon = feat.icon;
             return (
               <GlassCard 
                 key={feat.title} 
-                glow={true} 
+                glow={true}
                 glowColor={feat.color}
-                className="flex flex-col justify-between h-full group"
+                className="p-8 flex flex-col justify-between group hover:border-purple-500/40"
               >
-                <div className="space-y-4">
-                  
-                  {/* Top Icon & Badge */}
+                <div className="space-y-5">
                   <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Icon className="w-6 h-6 text-indigo-400" />
+                    <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:text-purple-300 transition-all duration-300 shadow-inner">
+                      <Icon className="w-6 h-6" />
                     </div>
                     <Badge variant={feat.color} dot={false}>
                       {feat.badge}
                     </Badge>
                   </div>
 
-                  {/* Title & Description */}
-                  <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">
-                    {feat.title}
-                  </h3>
-
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    {feat.description}
-                  </p>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-white group-hover:text-purple-200 transition-colors">
+                      {feat.title}
+                    </h3>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      {feat.description}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Bottom Metric Tags */}
-                <div className="pt-6 mt-6 border-t border-slate-800/80 flex items-center gap-2">
-                  {feat.metrics.map((m) => (
-                    <span 
-                      key={m} 
-                      className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 flex items-center gap-1"
-                    >
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                      {m}
-                    </span>
-                  ))}
+                <div className="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold">
+                  <div className="flex items-center gap-3">
+                    {feat.highlights.map((h) => (
+                      <span key={h} className="text-slate-400 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-purple-400 group-hover:translate-x-1 transition-transform" />
                 </div>
               </GlassCard>
             );
           })}
         </div>
+
       </div>
     </section>
   );
