@@ -8,38 +8,103 @@ const Button = ({
   icon: Icon,
   iconPosition = 'left',
   disabled = false,
+  loading = false,
   onClick,
   type = 'button',
   ...props
 }) => {
-  const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950 disabled:opacity-50 disabled:cursor-not-allowed select-none";
+  const base = `btn-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] disabled:opacity-50 disabled:cursor-not-allowed select-none`;
 
   const variants = {
-    primary: "bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-500/25 border border-indigo-400/30 focus:ring-indigo-500",
-    secondary: "bg-slate-800/80 hover:bg-slate-700/80 text-slate-100 border border-slate-700/60 backdrop-blur-md focus:ring-slate-400",
-    outline: "bg-transparent border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-400 focus:ring-indigo-500",
-    ghost: "bg-transparent text-slate-300 hover:bg-slate-800/50 hover:text-white focus:ring-slate-400",
-    cyan: "bg-gradient-to-r from-cyan-600 to-teal-500 hover:from-cyan-500 hover:to-teal-400 text-white shadow-lg shadow-cyan-500/20 border border-cyan-400/30 focus:ring-cyan-500",
-    danger: "bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 focus:ring-rose-500"
+    primary: `
+      btn-primary-shimmer
+      bg-gradient-to-r from-cyan-500 to-blue-600
+      hover:from-cyan-400 hover:to-blue-500
+      text-white
+      shadow-lg shadow-cyan-500/20
+      hover:shadow-cyan-500/30 hover:shadow-xl
+      border border-cyan-400/20
+      hover:scale-[1.02] active:scale-[0.98]
+    `,
+    secondary: `
+      bg-white/5 hover:bg-white/10
+      text-slate-200 hover:text-white
+      border border-white/10 hover:border-white/20
+      backdrop-blur-sm
+      hover:scale-[1.01] active:scale-[0.99]
+    `,
+    outline: `
+      bg-transparent
+      border border-cyan-500/40 hover:border-cyan-400/70
+      text-cyan-400 hover:text-cyan-300
+      hover:bg-cyan-500/5
+      hover:scale-[1.01] active:scale-[0.99]
+    `,
+    ghost: `
+      bg-transparent
+      text-slate-300 hover:text-white
+      hover:bg-white/5
+      hover:scale-[1.01] active:scale-[0.99]
+    `,
+    cyan: `
+      btn-primary-shimmer
+      bg-gradient-to-r from-cyan-500 to-blue-600
+      hover:from-cyan-400 hover:to-blue-500
+      text-white
+      shadow-lg shadow-cyan-500/20
+      hover:shadow-cyan-500/35 hover:shadow-xl
+      border border-cyan-400/25
+      hover:scale-[1.02] active:scale-[0.98]
+    `,
+    danger: `
+      bg-rose-600/90 hover:bg-rose-500
+      text-white
+      border border-rose-500/30
+      shadow-md shadow-rose-600/20
+      hover:scale-[1.02] active:scale-[0.98]
+    `,
+    success: `
+      bg-emerald-600/90 hover:bg-emerald-500
+      text-white
+      border border-emerald-500/30
+      shadow-md shadow-emerald-600/20
+      hover:scale-[1.02] active:scale-[0.98]
+    `,
   };
 
   const sizes = {
-    sm: "text-xs px-3 py-1.5 gap-1.5",
-    md: "text-sm px-4 py-2.5 gap-2",
-    lg: "text-base px-6 py-3.5 gap-2.5"
+    xs: 'text-xs px-2.5 py-1.5 gap-1.5 rounded-lg',
+    sm: 'text-xs px-3.5 py-2 gap-1.5',
+    md: 'text-sm px-5 py-2.5 gap-2',
+    lg: 'text-base px-7 py-3.5 gap-2.5',
+    xl: 'text-lg px-9 py-4 gap-3',
   };
 
   return (
     <button
       type={type}
-      disabled={disabled}
+      disabled={disabled || loading}
       onClick={onClick}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`${base} ${variants[variant] || variants.primary} ${sizes[size] || sizes.md} ${className}`}
       {...props}
     >
-      {Icon && iconPosition === 'left' && <Icon className="w-4 h-4 shrink-0" />}
-      <span>{children}</span>
-      {Icon && iconPosition === 'right' && <Icon className="w-4 h-4 shrink-0" />}
+      {loading ? (
+        <svg
+          className="w-4 h-4 animate-spin"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      ) : (
+        Icon && iconPosition === 'left' && <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+      )}
+      {children && <span>{children}</span>}
+      {!loading && Icon && iconPosition === 'right' && (
+        <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+      )}
     </button>
   );
 };

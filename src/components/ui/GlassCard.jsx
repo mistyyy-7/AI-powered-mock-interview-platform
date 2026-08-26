@@ -5,34 +5,35 @@ const GlassCard = ({
   className = '',
   hoverEffect = true,
   glow = false,
-  glowColor = 'indigo',
+  glowColor = 'cyan',
+  reveal = false,
+  revealDelay = 0,
   onClick,
+  as: Tag = 'div',
   ...props
 }) => {
-  const glowStyles = {
-    indigo: "shadow-[0_0_40px_-10px_rgba(99,102,241,0.25)] border-indigo-500/30",
-    cyan: "shadow-[0_0_40px_-10px_rgba(6,182,212,0.25)] border-cyan-500/30",
-    purple: "shadow-[0_0_40px_-10px_rgba(168,85,247,0.25)] border-purple-500/30",
-    emerald: "shadow-[0_0_40px_-10px_rgba(16,185,129,0.25)] border-emerald-500/30"
+  const glowMap = {
+    cyan:    'shadow-[0_0_40px_-12px_rgba(6,182,212,0.25)] border-cyan-500/25',
+    blue:    'shadow-[0_0_40px_-12px_rgba(59,130,246,0.25)] border-blue-500/25',
+    violet:  'shadow-[0_0_40px_-12px_rgba(129,140,248,0.20)] border-violet-500/25',
+    emerald: 'shadow-[0_0_40px_-12px_rgba(16,185,129,0.25)] border-emerald-500/25',
+    rose:    'shadow-[0_0_40px_-12px_rgba(244,63,94,0.20)] border-rose-500/25',
   };
 
   return (
-    <div
+    <Tag
       onClick={onClick}
       className={`
-        relative rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 p-6 
-        transition-all duration-300 overflow-hidden
-        ${hoverEffect ? 'hover:border-indigo-500/40 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10' : ''}
-        ${glow ? glowStyles[glowColor] : ''}
-        ${onClick ? 'cursor-pointer' : ''}
+        glass-card p-6
+        ${hoverEffect ? 'glass-hover cursor-default' : ''}
+        ${glow ? glowMap[glowColor] || glowMap.cyan : ''}
+        ${onClick ? '!cursor-pointer' : ''}
         ${className}
       `}
       {...props}
     >
-      {/* Subtle top glare line */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent pointer-events-none" />
       {children}
-    </div>
+    </Tag>
   );
 };
 
