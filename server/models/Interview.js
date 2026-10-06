@@ -39,6 +39,14 @@ const interviewSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  voiceMetrics: {
+    type: Object,
+    default: {}
+  },
+  visualMetrics: {
+    type: Object,
+    default: {}
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -1,11 +1,10 @@
 import Interview from '../models/Interview.js';
+import { evaluateInterviewAnswers } from '../services/aiEvaluationService.js';
 
 // @desc    Create a new mock interview session
-// @route   POST /api/interviews
-// @access  Private
 export const createInterview = async (req, res) => {
   try {
-    const { role, interviewType, difficulty, questionCount, questions, answers, scores, overallScore } = req.body;
+    const { role, interviewType, difficulty, questionCount, questions, answers, scores, overallScore, voiceMetrics, visualMetrics } = req.body;
 
     const interview = await Interview.create({
       userId: req.user._id,
@@ -16,7 +15,9 @@ export const createInterview = async (req, res) => {
       questions: questions || [],
       answers: answers || {},
       scores: scores || {},
-      overallScore: overallScore || 0
+      overallScore: overallScore || 0,
+      voiceMetrics: voiceMetrics || {},
+      visualMetrics: visualMetrics || {}
     });
 
     return res.status(201).json({
@@ -103,5 +104,22 @@ export const updateInterview = async (req, res) => {
   } catch (error) {
     console.error('[interviewController:updateInterview]', error);
     return res.status(500).json({ success: false, message: 'Failed to update interview session', error: error.message });
+  }
+};
+
+// @desc    Evaluate interview answers using AI
+// @route   POST /api/interviews/evaluate
+// @access  Private
+export const evaluateInterview = async (req, res) => {
+  try {
+    const { questions, answers } = req.body;
+    const evaluation = await evaluateInterviewAnswers(questions, answers);
+    return res.json({
+      success: true,
+      evaluation
+    });
+  } catch (error) {
+    console.error('[interviewController:evaluateInterview]', error);
+    return res.status(500).json({ success: false, message: 'Failed to evaluate interview', error: error.message });
   }
 };

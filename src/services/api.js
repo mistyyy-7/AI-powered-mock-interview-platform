@@ -115,6 +115,18 @@ export const api = {
       console.log('[API] Falling back to local update');
       return null;
     }
+  },
+
+  evaluateInterview: async (questions, answers) => {
+    try {
+      return await request('/interviews/evaluate', {
+        method: 'POST',
+        body: JSON.stringify({ questions, answers })
+      });
+    } catch (err) {
+      console.error('[API] Evaluation failed:', err);
+      return null;
+    }
   }
 };
 

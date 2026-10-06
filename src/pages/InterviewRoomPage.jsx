@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import CanvasBackground from '../components/ui/CanvasBackground';
@@ -19,10 +19,13 @@ import {
   CheckCircle2, 
   FileText,
   Pause,
-  Play
+  Play,
+  Clock
 } from 'lucide-react';
 import { getMockQuestions } from '../data/mockQuestions';
 import { calculateInterviewScore } from '../utils/scoreCalculator';
+import { analyzeVoicePerformance, aggregateVoiceMetrics } from '../utils/voiceAnalysis';
+import { visualAnalyzer } from '../utils/visualAnalysis';
 import api from '../services/api';
 
 const InterviewRoomPage = () => {
@@ -41,11 +44,150 @@ const InterviewRoomPage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answersMap, setAnswersMap] = useState({});
   const [currentAnswer, setCurrentAnswer] = useState('');
+  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [voiceMetricsMap, setVoiceMetricsMap] = useState({});
+  const [pauseCountTracker, setPauseCountTracker] = useState(0);
+  const lastSpeechTimeRef = useRef(Date.now());
   
   const [micActive, setMicActive] = useState(true);
   const [videoActive, setVideoActive] = useState(true);
   const [showHint, setShowHint] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+
+  const videoRef = useRef(null);
+  const [stream, setStream] = useState(null);
+  const [mediaError, setMediaError] = useState('');
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const recognitionRef = useRef(null);
+  const sttStateRef = useRef({ micActive, isPaused });
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        const now = Date.now();
+        if (now - lastSpeechTimeRef.current > 3000) {
+          setPauseCountTracker(prev => prev + 1);
+        }
+        lastSpeechTimeRef.current = now;
+        
+        let interim = '';
+        let finalStr = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalStr += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        if (finalStr) {
+          setCurrentAnswer(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + finalStr);
+        }
+        setLiveTranscript(interim);
+      };
+
+      recognition.onerror = (err) => {
+        console.error('Speech recognition error:', err.error);
+        if (err.error === 'not-allowed') {
+          setMicActive(false);
+        }
+      };
+
+      recognitionRef.current = recognition;
+    }
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    sttStateRef.current = { micActive, isPaused };
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = () => {
+        const state = sttStateRef.current;
+        if (state.micActive && !state.isPaused) {
+          try { recognitionRef.current.start(); } catch(e) {}
+        }
+      };
+      
+      if (micActive && !isPaused) {
+        try { recognitionRef.current.start(); } catch (e) {}
+      } else {
+        recognitionRef.current.stop();
+        setLiveTranscript('');
+      }
+    }
+  }, [micActive, isPaused]);
+
+
+  useEffect(() => {
+    let activeStream = null;
+    const initStream = async () => {
+      try {
+        const initialStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        setStream(initialStream);
+        activeStream = initialStream;
+        setMediaError('');
+        
+        await visualAnalyzer.initialize();
+        visualAnalyzer.resetMetrics();
+      } catch (err) {
+        console.error('Media access error:', err);
+        setMediaError('Camera/Mic permission denied.');
+        setVideoActive(false);
+        setMicActive(false);
+      }
+    };
+    initStream();
+    return () => {
+      if (activeStream) {
+        activeStream.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (stream) {
+      stream.getVideoTracks().forEach(track => { track.enabled = videoActive; });
+      stream.getAudioTracks().forEach(track => { track.enabled = micActive; });
+    }
+  }, [videoActive, micActive, stream]);
+
+  useEffect(() => {
+    let animationFrameId;
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+      
+      const loop = () => {
+        if (videoActive && !isPaused) {
+          visualAnalyzer.analyzeFrame(videoRef.current);
+        }
+        animationFrameId = requestAnimationFrame(loop);
+      };
+      loop();
+    }
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [stream, videoActive, isPaused]);
 
   useEffect(() => {
     const fetched = getMockQuestions({ role, type, difficulty, limit: questionCount });
@@ -59,8 +201,19 @@ const InterviewRoomPage = () => {
     difficulty: difficulty
   };
 
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [evaluationSummary, setEvaluationSummary] = useState(null);
+
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
+
+    const durationSeconds = (Date.now() - questionStartTime) / 1000;
+    const currentMetrics = analyzeVoicePerformance(currentAnswer, durationSeconds, pauseCountTracker);
+    const updatedMetricsMap = {
+      ...voiceMetricsMap,
+      [currentQuestion.id]: currentMetrics
+    };
+    setVoiceMetricsMap(updatedMetricsMap);
 
     const updatedAnswers = {
       ...answersMap,
@@ -73,14 +226,66 @@ const InterviewRoomPage = () => {
       const nextQ = questions[currentIndex + 1];
       setCurrentAnswer(updatedAnswers[nextQ?.id] || '');
       setShowHint(false);
+      setLiveTranscript('');
+      setQuestionStartTime(Date.now());
+      setPauseCountTracker(0);
+      lastSpeechTimeRef.current = Date.now();
     } else {
-      const evaluationResult = calculateInterviewScore(questions, updatedAnswers);
+      setIsEvaluating(true);
       
-      localStorage.setItem('last_interview_result', JSON.stringify({
+      const evaluationResponse = await api.evaluateInterview(questions, updatedAnswers);
+      let evaluationResult;
+      if (evaluationResponse && evaluationResponse.evaluation) {
+         evaluationResult = evaluationResponse.evaluation;
+      } else {
+         evaluationResult = calculateInterviewScore(questions, updatedAnswers);
+      }
+      
+      const aggregatedVoiceMetrics = aggregateVoiceMetrics(Object.values(updatedMetricsMap));
+      const finalVisualMetrics = visualAnalyzer.getMetricsSummary();
+
+      const categoryScores = evaluationResult.categoryScores || {
+        technical: evaluationResult.avgTechnical ?? 80,
+        communication: evaluationResult.avgComm ?? 80,
+        relevance: evaluationResult.avgRelevance ?? 80,
+        completeness: evaluationResult.avgStar ?? 80,
+        pacing: 80,
+        grade: evaluationResult.grade,
+        badgeColor: evaluationResult.badgeColor
+      };
+
+      const resultPayload = {
         sessionConfig,
         evaluationResult,
+        voiceMetrics: aggregatedVoiceMetrics,
+        visualMetrics: finalVisualMetrics,
         completedAt: new Date().toISOString()
-      }));
+      };
+
+      localStorage.setItem('last_interview_result', JSON.stringify(resultPayload));
+
+      // Append to persistent interview history
+      try {
+        const history = JSON.parse(localStorage.getItem('interview_history') || '[]');
+        const historyItem = {
+          _id: 'sess-' + Date.now(),
+          role,
+          interviewType: type,
+          difficulty,
+          questionCount: questions.length,
+          questions,
+          answers: updatedAnswers,
+          scores: categoryScores,
+          overallScore: evaluationResult.overallScore,
+          voiceMetrics: aggregatedVoiceMetrics,
+          visualMetrics: finalVisualMetrics,
+          evaluationResult,
+          createdAt: new Date().toISOString()
+        };
+        localStorage.setItem('interview_history', JSON.stringify([historyItem, ...history.filter(h => h._id !== historyItem._id)]));
+      } catch (e) {
+        console.warn('Local history update skipped', e);
+      }
 
       try {
         await api.createInterview({
@@ -90,20 +295,20 @@ const InterviewRoomPage = () => {
           questionCount: questions.length,
           questions,
           answers: updatedAnswers,
-          scores: {
-            avgTechnical: evaluationResult.avgTechnical,
-            avgStar: evaluationResult.avgStar,
-            avgComm: evaluationResult.avgComm,
-            grade: evaluationResult.grade,
-            badgeColor: evaluationResult.badgeColor
-          },
-          overallScore: evaluationResult.overallScore
+          scores: categoryScores,
+          overallScore: evaluationResult.overallScore,
+          voiceMetrics: aggregatedVoiceMetrics,
+          visualMetrics: finalVisualMetrics
         });
       } catch (err) {
         console.log('[InterviewRoom] Local fallback saved');
       }
 
-      navigate('/result', { state: { evaluationResult, sessionConfig } });
+      setIsEvaluating(false);
+      // We will pass the aggregated voice metrics to the result page via state
+      evaluationResult.voiceMetrics = aggregatedVoiceMetrics;
+      evaluationResult.visualMetrics = finalVisualMetrics;
+      setEvaluationSummary(evaluationResult);
     }
   };
 
@@ -132,6 +337,13 @@ const InterviewRoomPage = () => {
 
           {/* Progress Bar */}
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
+              <Clock className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-mono font-medium text-slate-200">
+                {formatTime(elapsedTime)}
+              </span>
+            </div>
+
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-purple-300">
                 Question {currentIndex + 1} of {questions.length || 1}
@@ -155,7 +367,43 @@ const InterviewRoomPage = () => {
           </div>
         </div>
 
-        {/* Center Grid: AI Orb Visual & Question/Answer Container */}
+        {/* Center Grid or Evaluation Summary */}
+        {isEvaluating ? (
+           <div className="flex-1 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <h2 className="text-2xl font-bold text-white">AI is evaluating your answers...</h2>
+                <p className="text-slate-400">Analyzing relevance, technical correctness, and clarity.</p>
+              </div>
+           </div>
+        ) : evaluationSummary ? (
+           <div className="flex-1 flex flex-col items-center justify-center space-y-6 animate-in fade-in zoom-in duration-500">
+              <GlassCard className="p-8 max-w-md w-full text-center space-y-6 border-emerald-500/30">
+                 <h2 className="text-3xl font-bold text-white">Interview Complete!</h2>
+                 <div className="space-y-2">
+                   <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">
+                      {evaluationSummary.overallScore}%
+                   </div>
+                   <div className="text-lg font-semibold text-slate-300">Overall AI Score</div>
+                   <Badge variant={evaluationSummary.badgeColor}>{evaluationSummary.grade}</Badge>
+                 </div>
+                 
+                 <p className="text-sm text-slate-400">
+                    The AI has evaluated your responses across technical depth, communication, and completeness.
+                 </p>
+
+                 <Button 
+                    variant="primary" 
+                    className="w-full"
+                    icon={ArrowRight}
+                    iconPosition="right"
+                    onClick={() => navigate('/result', { state: { evaluationResult: evaluationSummary, sessionConfig } })}
+                 >
+                    View Detailed Scorecard
+                 </Button>
+              </GlassCard>
+           </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
           
           {/* Left: Animated AI Orb & Camera Feed Tile (5 Cols) */}
@@ -230,13 +478,44 @@ const InterviewRoomPage = () => {
                 </div>
               </div>
 
-              {videoActive ? (
-                <div className="aspect-video rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-xs text-slate-500">
-                  <span>HD Candidate Camera Feed Active</span>
+              {mediaError ? (
+                <div className="aspect-video rounded-xl bg-slate-950 border border-rose-900/50 flex flex-col items-center justify-center text-xs text-rose-500 space-y-2 p-4 text-center">
+                  <VideoOff className="w-8 h-8 opacity-50" />
+                  <span>{mediaError}</span>
+                  <span className="text-[10px] text-slate-500">Please check browser permissions</span>
+                </div>
+              ) : videoActive ? (
+                <div className="aspect-video rounded-xl bg-slate-950 border border-slate-800 overflow-hidden relative">
+                  <video 
+                    ref={videoRef}
+                    autoPlay 
+                    playsInline 
+                    muted 
+                    className="w-full h-full object-cover transform scale-x-[-1]"
+                  />
+                  {!micActive && (
+                    <div className="absolute top-2 right-2 bg-rose-500/80 p-1.5 rounded-lg backdrop-blur-sm">
+                      <MicOff className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="aspect-video rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-xs text-slate-500">
+                <div className="aspect-video rounded-xl bg-slate-950 border border-slate-800 flex flex-col items-center justify-center text-xs text-slate-500 space-y-2">
+                  <VideoOff className="w-8 h-8 opacity-20" />
                   <span>Camera Disabled</span>
+                </div>
+              )}
+
+              {/* Live Transcript Display */}
+              {liveTranscript && (
+                <div className="mt-4 p-3 rounded-xl bg-slate-950/50 border border-slate-800/80 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">Live Transcript</span>
+                  </div>
+                  <p className="text-sm text-slate-300 italic leading-relaxed">
+                    "{liveTranscript}"
+                  </p>
                 </div>
               )}
             </div>
@@ -325,7 +604,7 @@ const InterviewRoomPage = () => {
                     iconPosition="right"
                     className="shadow-lg shadow-purple-600/30"
                   >
-                    {isLastQuestion ? 'Complete & View Scorecard' : 'Submit Answer & Next →'}
+                    {isLastQuestion ? 'Complete & Evaluate' : 'Submit Answer & Next →'}
                   </Button>
                 </div>
               </form>
@@ -335,6 +614,7 @@ const InterviewRoomPage = () => {
           </div>
 
         </div>
+        )}
 
       </main>
     </div>

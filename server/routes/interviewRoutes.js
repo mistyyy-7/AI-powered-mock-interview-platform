@@ -3,13 +3,16 @@ import {
   createInterview, 
   getInterviews, 
   getInterviewById, 
-  updateInterview 
+  updateInterview,
+  evaluateInterview 
 } from '../controllers/interviewController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.use(protect); // All interview endpoints are JWT protected
+
+router.post('/evaluate', evaluateInterview);
 
 router.route('/')
   .post(createInterview)
