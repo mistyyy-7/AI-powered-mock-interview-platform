@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Cpu, Sparkles, Menu, X, LayoutDashboard, LogOut } from 'lucide-react';
+import { Cpu, Sparkles, Menu, X, LayoutDashboard, LogOut, User } from 'lucide-react';
 import Button from '../ui/Button';
 import api from '../../services/api';
 
@@ -92,6 +92,11 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-2.5">
             {token && user ? (
               <>
+                <Link to="/profile">
+                  <Button variant="ghost" size="sm" icon={User} className="text-cyan-400 hover:text-cyan-300">
+                    {user.name || 'Profile'}
+                  </Button>
+                </Link>
                 <Link to="/dashboard">
                   <Button variant="ghost" size="sm" icon={LayoutDashboard}>
                     Dashboard
@@ -166,8 +171,13 @@ const Navbar = () => {
           <div className="pt-3 mt-3 border-t border-white/[0.06] flex flex-col gap-2">
             {token ? (
               <>
+                <Link to="/profile" onClick={() => setMobileOpen(false)}>
+                  <Button variant="secondary" className="w-full justify-center text-cyan-400" icon={User}>
+                    {user?.name ? `${user.name} (Profile)` : 'My Profile'}
+                  </Button>
+                </Link>
                 <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
-                  <Button variant="secondary" className="w-full justify-center" icon={LayoutDashboard}>
+                  <Button variant="ghost" className="w-full justify-center" icon={LayoutDashboard}>
                     Dashboard
                   </Button>
                 </Link>

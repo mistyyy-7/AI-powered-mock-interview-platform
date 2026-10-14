@@ -6,6 +6,7 @@ import SetupPage from '../pages/SetupPage';
 import InterviewRoomPage from '../pages/InterviewRoomPage';
 import ResultPage from '../pages/ResultPage';
 import AuthPage from '../pages/AuthPage';
+import ProfilePage from '../pages/ProfilePage';
 import NotFoundPage from '../pages/NotFoundPage';
 
 const AppRoutes = () => {
@@ -15,6 +16,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<AuthPage />} />
       <Route path="/signup" element={<AuthPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
       <Route path="/setup" element={<SetupPage />} />
       <Route path="/interview/:id" element={<InterviewRoomPage />} />
       <Route path="/result" element={<ResultPage />} />
